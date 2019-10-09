@@ -20,10 +20,11 @@ exports.postSignIn = function(request, response) {
     if(!request.body.username || !request.body.password) 
         return response.json({message: "Заполните все поля"});
 
+    console.log(request.body);
     let username = request.body.username;
     let password = request.body.password;
 
-    pool.query(`SELECT * from users_login WHERE login = '${username}'`, function(err1, data) {
+    pool.query("SELECT * from users_login WHERE ?", {login: username}, function(err1, data) {
         console.log(data);
 
         if(!data[0]) { 

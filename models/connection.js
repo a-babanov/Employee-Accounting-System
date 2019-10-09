@@ -9,3 +9,4 @@ var options = {
 const pool = mysql.createPool(options); //соединение с базой данных
 
 module.exports = pool;
+

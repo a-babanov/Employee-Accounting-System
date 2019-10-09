@@ -30,8 +30,8 @@ exports.getIndex = function(request, response){
             //console.log("data1: ");
             //console.log(data1);
             data = data1;
-            pool.query(`SELECT id, timeOfArrival, numberOfHours, employeeId, isExcused, comment from timeSheet ` +
-                `where currentDay = '${curDate}'`, function(err, data2) {
+            pool.query("SELECT id, timeOfArrival, numberOfHours, employeeId, isExcused, comment from timeSheet " + 
+                "where ?", {currentDay: curDate}, function(err, data2) {
                 if(err)
                     return console.log(err);
                 //console.log("data2: ");
