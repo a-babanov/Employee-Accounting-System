@@ -1,4 +1,4 @@
-const pool = require('../models/connection.js');
+const User = require('../models/usersModel.js');
 
 //Открытие страницы авторизации
 exports.getPageSignIn = function(request, response) {
@@ -16,47 +16,48 @@ exports.getPageSignIn = function(request, response) {
     }
 };
 
-exports.postSignIn = function(request, response) {
+exports.postSignIn = async function(request, response) {
     if(!request.body.username || !request.body.password) 
         return response.json({message: "Заполните все поля"});
 
+    console.log("\nАвторизация");
     console.log(request.body);
     let username = request.body.username;
     let password = request.body.password;
 
-    pool.query("SELECT * from users_login WHERE ?", {login: username}, function(err1, data) {
-        console.log(data);
+    const selectUsersLogin = await User  //Ищем пользователя с логином 'username'
+        .query()
+        .where('login', username);
 
-        if(!data[0]) { 
-            return response.json({
-                field: 1,
-                message: "Неверный логин"
-            }); 
-        } 
- 
-        if(data[0]['password'] !== password){ 
-            return response.json({
-                field: 2,
-                message: "Неверный пароль"
-            });
-        }
-            
-        request.session.userId = data[0]['id'];
-        request.session.userLogin = data[0]['login'];
-        request.session.userRole = data[0]['role'];
-        console.log(request.session);
-                    
-        if(request.session.userRole !== 0) { 
-            return response.json({
-                field: 2,
-                message: "Нет разрешённого доступа!"
-            });
-        }
+    console.log(selectUsersLogin);
 
+    if(!selectUsersLogin[0]) {      
         return response.json({
-            field: 0,
-            message: ""
+            field: 1,
+            message: "Неверный логин"
         });
+    }
+    if(selectUsersLogin[0]['password'] !== password) {
+        return response.json({
+            field: 2,
+            message: "Неверный пароль"
+        });
+    }
+
+    request.session.userId = selectUsersLogin[0]['id'];
+    request.session.userLogin = selectUsersLogin[0]['login'];
+    request.session.userRole = selectUsersLogin[0]['role'];
+    console.log(request.session);
                     
+    if(request.session.userRole !== 0) { 
+        return response.json({
+            field: 2,
+            message: "Нет разрешённого доступа!"
+        });
+    }
+
+    return response.json({
+        field: 0,
+        message: ""
     });
 };

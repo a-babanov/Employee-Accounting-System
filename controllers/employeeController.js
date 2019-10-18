@@ -1,4 +1,6 @@
-const pool = require('../models/connection.js');
+const KindOfHolidays = require('../models/kindOfHolidayModel.js');
+const Employee = require('../models/employeesModel.js');
+const Holidays = require('../models/holidaysModel.js');
 
 function correct_date(uncorrect_date) {  //Форматирует дату в виде: "дд-мм-гггг" в вид: "гггг-мм-дд"
     let d = uncorrect_date.slice(0, 2);
@@ -7,39 +9,56 @@ function correct_date(uncorrect_date) {  //Форматирует дату в в
     return `${y}-${m}-${d}`;
 }
 
-exports.getPageEmployee = function(request, response){
-    if(request.session.userRole == 0 && request.session.userLogin) {
-        pool.query("SELECT id, employee, DATE_FORMAT(birthDay, '%d.%m.%Y'), DATE_FORMAT(appointmentDay, '%d.%m.%Y'), " +
-            "DATE_FORMAT(terminationDay, '%d.%m.%Y') from employees", function(err, data) {
-            if(err)
-                return console.log(err);
+function correct_date2(uncorrect_date) { //Форматирует дату в вид: "дд.мм.гггг"
+    let y = uncorrect_date.getFullYear();
+    let m = uncorrect_date.getMonth() + 1;
+    let d = uncorrect_date.getDate();
+    if(m < 10) 
+        m = "0" + m;
+    if(d < 10)
+        d = "0" + d;
+    return `${d}.${m}.${y}`;
+}
 
-            //форматируем дату в формате %d.%m.%Y
-            for(let i=0; i<data.length; i++) {
-                data[i]['birthDay'] = data[i]["DATE_FORMAT(birthDay, \'%d.%m.%Y\')"];
-                data[i]['appointmentDay'] = data[i]["DATE_FORMAT(appointmentDay, \'%d.%m.%Y\')"];
-                data[i]['terminationDay'] = data[i]["DATE_FORMAT(terminationDay, \'%d.%m.%Y\')"];
-                data[i]['isTerminationDay'] = false;
-                if(data[i]['terminationDay']) {
-                    data[i]['isTerminationDay'] = true;     //сотрудник уволен
-                }
-            }
-
-            //console.log(data);
-            return response.render("employee.hbs", {
-                employees: data
-            });
-        });
-    } 
-    else {
+exports.getPageEmployee = async function(request, response){
+    if(request.session.userRole !== 0 && !request.session.userLogin) {
         console.log("Вы не авторизованы!");
         return response.redirect(301, "/");
+    }   
+    
+    try {
+        const data = await Employee
+            .query();
+
+        for(let i=0; i<data.length; i++) {
+            data[i]['birthDay'] = correct_date2(new Date(data[i]['birthDay']));
+            data[i]['appointmentDay'] = correct_date2(new Date(data[i]['appointmentDay']));
+            data[i]['isTerminationDay'] = false;
+            
+            if(data[i]['terminationDay']) {
+                data[i]['isTerminationDay'] = true;     //сотрудник уволен
+                data[i]['terminationDay'] = correct_date2(new Date(data[i]['terminationDay']));
+            }
+        }
+
+        //console.log(data);
+        return response.render("employee.hbs", {
+            employees: data
+        });
+
+    } catch(err) {
+        response.locals.message = err.message;
+        response.locals.error = request.app.get('env') === 'development' ? err : {};
+
+        // render the error page
+        response.status(err.status || 500);
+        return response.render('error.hbs');
     }
 };
 
 
 //Обработка формы добавления сотрудника
-exports.postAddEmployee = function(request, response){
+exports.postAddEmployee = async function(request, response){
     if(!request.body)
         return response.sendStatus(400);
 
@@ -48,49 +67,71 @@ exports.postAddEmployee = function(request, response){
     const birthDay = correct_date(request.body.employeeBirthDay);
     const appointmentDay = correct_date(request.body.employeeAppoinmentDay);
 
-    pool.query("INSERT INTO employees(employee, birthDay, appointmentDay) " +
-        "VALUES (?,?,?)", [name, birthDay, appointmentDay], function(err, data){
-        if(err)
-            return console.log(err);
+    try {
+        await Employee
+            .query()
+            .insert({employee: name, birthDay: birthDay, appointmentDay: appointmentDay});
 
         response.redirect("/employee");
-    });
+    }
+    catch(err) {
+        response.locals.message = err.message;
+        response.locals.error = request.app.get('env') === 'development' ? err : {};
+
+        // render the error page
+        response.status(err.status || 500);
+        return response.render('error.hbs');
+    }
 };
 
 //Обработка формы редактирования сотрудника
-exports.postEdit = function(request, response){
+exports.postEdit = async function(request, response){
     if(!request.body)
         return response.sendStatus(400);
+    
     console.log(request.body);
     const id = request.body.id;
     const name = request.body.employeeName;
     const birthDay = correct_date(request.body.employeeBirthDay);
     const appointmentDay = correct_date(request.body.employeeAppoinmentDay);
 
-    if(request.body.employeeTerminationDay) {
-        const terminationDay = correct_date(request.body.employeeTerminationDay);
-        console.log(terminationDay);
+    try {
+        if(request.body.employeeTerminationDay) {
+            const terminationDay = correct_date(request.body.employeeTerminationDay);
+            console.log(terminationDay);
 
-        pool.query("UPDATE employees SET employee=?, birthDay=?, appointmentDay=?, " +
-            "terminationDay=? WHERE id=?", [name, birthDay, appointmentDay, terminationDay, id], function(err, data){
-            if(err)
-                return console.log(err);
+            const update = await Employee.query()
+                .findById(id)
+                .patch({
+                    employee: name,
+                    birthDay: birthDay,
+                    appointmentDay: appointmentDay,
+                    terminationDay: terminationDay
+                });
             response.redirect("/employee");
-        });
-    }
-    else {
-        pool.query("UPDATE employees SET employee=?, birthDay=?, appointmentDay=? where id=?",
-            [name, birthDay, appointmentDay, id], function(err, data){
-            if(err)
-                return console.log(err);
+        }
+        else {
+            await Employee.query()
+                .findById(id)
+                .patch({
+                    employee: name,
+                    birthDay: birthDay,
+                    appointmentDay: appointmentDay,
+                });
             response.redirect("/employee");
-        });
+        }
+    } catch(err) {
+        response.locals.message = err.message;
+        response.locals.error = request.app.get('env') === 'development' ? err : {};
+
+        // render the error page
+        response.status(err.status || 500);
+        return response.render('error.hbs');
     }
 };
 
-
 //Обработка кнопки и формы отпуска
-exports.postHoliday = function(request, response){
+exports.postHoliday = async function(request, response){
     if(!request.body)
         return response.sendStatus(400);
     console.log(request.body);
@@ -100,16 +141,29 @@ exports.postHoliday = function(request, response){
     const causeText = request.body.causeText;
     const kindOfHolidayId = 1;
 
-    pool.query("INSERT INTO holidays(date_from, date_to, causeText, kindOfHolidayId, employeeId) " +
-        "VALUES (?,?,?,?,?)", [dateOfHoliday, dateOfEndHoliday, causeText, kindOfHolidayId, id], function(err, data){
-        if(err)
-            return console.log(err);
+    try {
+        await Holidays.query()
+            .insert({
+                date_from: dateOfHoliday,
+                date_to: dateOfEndHoliday,
+                causeText: causeText,
+                kindOfHolidayId: kindOfHolidayId,
+                employeeId: id
+            });
+
         response.redirect("/employee");
-    });
+    } catch(err) {
+        response.locals.message = err.message;
+        response.locals.error = request.app.get('env') === 'development' ? err : {};
+
+        // render the error page
+        response.status(err.status || 500);
+        return response.render('error.hbs');
+    }
 };
 
 //Обработка кнопки и формы командировки
-exports.postBusinessTrip = function(request, response){
+exports.postBusinessTrip = async function(request, response){
     if(!request.body)
         return response.sendStatus(400);
     console.log(request.body);
@@ -119,16 +173,29 @@ exports.postBusinessTrip = function(request, response){
     const causeText = request.body.causeText;
     const kindOfHolidayId = 2;
 
-    pool.query("INSERT INTO holidays(date_from, date_to, causeText, kindOfHolidayId, employeeId) " +
-        "VALUES (?,?,?,?,?)", [dateFrom, dateTo, causeText, kindOfHolidayId, id], function(err, data){
-        if(err)
-            return console.log(err);
+    try {
+        await Holidays.query()
+            .insert({
+                date_from: dateFrom,
+                date_to: dateTo,
+                causeText: causeText,
+                kindOfHolidayId: kindOfHolidayId,
+                employeeId: id
+            });
+
         response.redirect("/employee");
-    });
+    } catch(err) {
+        response.locals.message = err.message;
+        response.locals.error = request.app.get('env') === 'development' ? err : {};
+
+        // render the error page
+        response.status(err.status || 500);
+        return response.render('error.hbs');
+    }
 };
 
 //Обработка кнопки и формы больничного
-exports.postSickDays = function(request, response){
+exports.postSickDays = async function(request, response){
     if(!request.body)
         return response.sendStatus(400);
     console.log(request.body);
@@ -138,11 +205,24 @@ exports.postSickDays = function(request, response){
     const causeText = request.body.causeText;
     const kindOfHolidayId = 3;
 
-    pool.query("INSERT INTO holidays(date_from, date_to, causeText, kindOfHolidayId, employeeId) " +
-        "VALUES (?,?,?,?,?)", [dateFrom, dateTo, causeText, kindOfHolidayId, id], function(err, data){
-        if(err)
-            return console.log(err);
+    try {
+        const insert = await Holidays.query()
+            .insert({
+                date_from: dateFrom,
+                date_to: dateTo,
+                causeText: causeText,
+                kindOfHolidayId: kindOfHolidayId,
+                employeeId: id
+            });
+        console.log(insert);
         response.redirect("/employee");
-    });
+    } catch(err) {
+        response.locals.message = err.message;
+        response.locals.error = request.app.get('env') === 'development' ? err : {};
+
+        // render the error page
+        response.status(err.status || 500);
+        return response.render('error.hbs');
+    }
 };
 

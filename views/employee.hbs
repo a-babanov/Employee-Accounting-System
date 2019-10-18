@@ -26,15 +26,15 @@
                     <form action="/employee" name="addWorkerForm" method="post">
                         <p>
                             <label>ФИО:</label>
-                            <input type="text" name="employeeName">
+                            <input type="text" name="employeeName" required>
                         </p>
                         <p>
                             <label>Дата рождения:</label>
-                            <input type="tel" name="employeeBirthDay" id="employee_birth_day">
+                            <input type="tel" name="employeeBirthDay" id="employee_birth_day" required>
                         </p>
                         <p>
                             <label>Дата приёма:</label>
-                            <input type="tel" name="employeeAppoinmentDay" id="employee_appointment_day">
+                            <input type="tel" name="employeeAppoinmentDay" id="employee_appointment_day" required>
                         </p>
                         <table>
                             <tr>
@@ -114,15 +114,15 @@
                                         </p>
                                         <p>
                                             <label>ФИО:</label>
-                                            <input type="text" name="employeeName" value="{{this.employee}}">
+                                            <input type="text" name="employeeName" value="{{this.employee}}" required>
                                         </p>
                                         <p>
                                             <label>Дата рождения:</label>
-                                            <input type="tel" name="employeeBirthDay" id="employeeBirthDay_{{this.id}}" value="{{this.birthDay}}">
+                                            <input type="tel" name="employeeBirthDay" id="employeeBirthDay_{{this.id}}" value="{{this.birthDay}}" required>
                                         </p>
                                         <p>
                                             <label>Дата приёма:</label>
-                                            <input type="tel" name="employeeAppoinmentDay" id="employeeAppoinmentDay_{{this.id}}" value="{{this.appointmentDay}}">
+                                            <input type="tel" name="employeeAppoinmentDay" id="employeeAppoinmentDay_{{this.id}}" value="{{this.appointmentDay}}" required>
                                         </p>
                                         <p>
                                             <label>Дата увольнения:</label>
@@ -163,11 +163,11 @@
                                         </p>
                                         <p>
                                             <label>Дата выхода в отпуск:</label></br>
-                                            <input type="tel" name="dateOfHoliday" id="dateOfHoliday_{{this.id}}">
+                                            <input type="tel" name="dateOfHoliday" id="dateOfHoliday_{{this.id}}" required>
                                         </p>
                                         <p>
                                             <label>Дата выхода на работу:</label></br>
-                                            <input type="tel" name="dateOfEndHoliday" id="dateOfEndHoliday_{{this.id}}">
+                                            <input type="tel" name="dateOfEndHoliday" id="dateOfEndHoliday_{{this.id}}" required>
                                         </p>
                                         <p>
                                             <label>Причина отпуска:</label></br>
@@ -207,11 +207,11 @@
                                         </p>
                                         <p>
                                             <label>Дата выхода в больничную:</label></br>
-                                            <input type="tel" name="dateFrom" id="dateFrom_{{this.id}}">
+                                            <input type="tel" name="dateFrom" id="dateFrom_{{this.id}}" required>
                                         </p>
                                         <p>
                                             <label>Дата выхода на работу:</label></br>
-                                            <input type="tel" name="dateTo" id="dateTo_{{this.id}}">
+                                            <input type="tel" name="dateTo" id="dateTo_{{this.id}}" required
                                         </p>
                                         <p>
                                             <label>Причина:</label></br>
@@ -251,11 +251,11 @@
                                         </p>
                                         <p>
                                             <label>Дата выхода в командировку:</label></br>
-                                            <input type="tel" name="dateFrom" id="dateFrom2_{{this.id}}">
+                                            <input type="tel" name="dateFrom" id="dateFrom2_{{this.id}}" required>
                                         </p>
                                         <p>
                                             <label>Дата выхода на работу:</label></br>
-                                            <input type="tel" name="dateTo" id="dateTo2_{{this.id}}">
+                                            <input type="tel" name="dateTo" id="dateTo2_{{this.id}}" required>
                                         </p>
                                         <p>
                                             <label>Причина командировки:</label></br>
