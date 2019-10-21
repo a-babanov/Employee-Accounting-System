@@ -34,35 +34,6 @@ class TimeSheet extends Model {
   }
 }
 
-async function createSchema() {
-  if (await knex.schema.hasTable('timeSheet')) {
-    console.log("timeSheet is already exists in database!");
-    return;
-  }
-
-  // Create database schema. You should use knex migration files
-  // to do this. We create it here for simplicity.
-  await knex.schema.createTable('timeSheet', table => {
-    table.increments('id').primary();
-    table.date('currentDay');
-    table.time('timeOfArrival ');
-    table.time('numberOfHours ');
-    table.integer('employeeId');
-    table.boolean('isExcused');
-    table.text('comment');
-  });
-}
-
-createSchema()
-  	.then(() => {
-  		console.log("Соединение установлено!");
-  	})
-  	.catch(err => {
-  		console.log("Произошла ошибка при установке соединения!");
-    	console.error(err);
-    	return knex.destroy();
-  	});
-
 module.exports = TimeSheet;
 
 

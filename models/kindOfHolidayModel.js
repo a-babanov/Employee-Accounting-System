@@ -34,30 +34,6 @@ class KindOfHoliday extends Model {
   }
 }
 
-async function createSchema() {
-  if (await knex.schema.hasTable('kindOfHoliday')) {
-    console.log("kindOfHoliday is already exists in database!");
-    return;
-  }
-
-  // Create database schema. You should use knex migration files
-  // to do this. We create it here for simplicity.
-  await knex.schema.createTable('kindOfHoliday', table => {
-    table.increments('id').primary();
-    table.string('nameOfHoliday', 50);
-  });
-}
-
-createSchema()
-  	.then(() => {
-  		console.log("Соединение установлено!");
-  	})
-  	.catch(err => {
-  		console.log("Произошла ошибка при установке соединения!");
-    	console.error(err);
-    	return knex.destroy();
-  	});
-
 module.exports = KindOfHoliday;
 
 

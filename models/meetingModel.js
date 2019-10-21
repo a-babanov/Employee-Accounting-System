@@ -19,34 +19,6 @@ class Meeting extends Model {
   };
 }
 
-async function createSchema() {
-  if (await knex.schema.hasTable('meeting')) {
-    console.log("meeting is already exists in database!");
-    return;
-  }
-
-  // Create database schema. You should use knex migration files
-  // to do this. We create it here for simplicity.
-  await knex.schema.createTable('meeting', table => {
-    table.increments('id').primary();
-    table.date('currentDay');
-    table.time('timeFrom');
-    table.time('timeTo');
-    table.text('causeText');
-    table.integer('timesheetId');
-  });
-}
-
-createSchema()
-  	.then(() => {
-  		console.log("Соединение установлено!");
-  	})
-  	.catch(err => {
-  		console.log("Произошла ошибка при установке соединения!");
-    	console.error(err);
-    	return knex.destroy();
-  	});
-
 module.exports = Meeting;
 
 

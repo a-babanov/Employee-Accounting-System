@@ -44,33 +44,6 @@ class Employee extends Model {
   }
 }
 
-async function createSchema() {
-  if (await knex.schema.hasTable('employees')) {
-    console.log("employees is already exists in database!");
-    return;
-  }
-
-  // Create database schema. You should use knex migration files
-  // to do this. We create it here for simplicity.
-  await knex.schema.createTable('employees', table => {
-    table.increments('id').primary();
-    table.string('employee', 50);
-    table.date('birthDay');
-    table.date('appointmentDay');
-    table.date('terminationDay');
-  });
-}
-
-createSchema()
-  	.then(() => {
-  		console.log("Соединение установлено!");
-  	})
-  	.catch(err => {
-  		console.log("Произошла ошибка при установке соединения!");
-    	console.error(err);
-    	return knex.destroy();
-  	});
-
 module.exports = Employee;
 
 

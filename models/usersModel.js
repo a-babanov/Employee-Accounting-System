@@ -19,32 +19,6 @@ class User extends Model {
   };
 }
 
-async function createSchema() {
-  if (await knex.schema.hasTable('users_login')) {
-    console.log("users_login is already exists in database!");
-    return;
-  }
-
-  // Create database schema. You should use knex migration files
-  // to do this. We create it here for simplicity.
-  await knex.schema.createTable('users_login', table => {
-    table.increments('id').primary();
-    table.string('login');
-    table.string('password');
-    table.boolean('role');
-  });
-}
-
-createSchema()
-  	.then(() => {
-  		console.log("Соединение установлено!");
-  	})
-  	.catch(err => {
-  		console.log("Произошла ошибка при установке соединения!");
-    	console.error(err);
-    	return knex.destroy();
-  	});
-
 module.exports = User;
 
 

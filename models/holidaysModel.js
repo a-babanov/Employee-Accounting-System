@@ -19,34 +19,6 @@ class Holidays extends Model {
   };
 }
 
-async function createSchema() {
-  if (await knex.schema.hasTable('holidays')) {
-    console.log("holidays is already exists in database!");
-    return;
-  }
-
-  // Create database schema. You should use knex migration files
-  // to do this. We create it here for simplicity.
-  await knex.schema.createTable('holidays', table => {
-    table.increments('id').primary();
-    table.datetime('date_from');
-    table.datetime('date_to');
-    table.text('causeText');
-    table.integer('kindOfHolidayId');
-    table.integer('employeeId');
-  });
-}
-
-createSchema()
-  	.then(() => {
-  		console.log("Соединение установлено!");
-  	})
-  	.catch(err => {
-  		console.log("Произошла ошибка при установке соединения!");
-    	console.error(err);
-    	return knex.destroy();
-  	});
-
 module.exports = Holidays;
 
 
