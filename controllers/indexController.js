@@ -1,9 +1,19 @@
+const Joi = require('@hapi/joi');
+
 const KindOfHolidays = require('../models/kindOfHolidayModel.js');
 const Holidays = require('../models/holidaysModel.js');
 const Employee = require('../models/employeesModel.js');
 const Meeting = require('../models/meetingModel.js');
 const TimeSheet = require('../models/timesheetModel.js');
-const pool = require('../models/connection.js');
+
+const schema = Joi.object({
+    validate_int: Joi.number(),
+
+    validate_string: Joi.string(),
+
+    validate_time: Joi.string()
+        .pattern(/^(\d\d?):(\d\d?)$/)
+});
 
 var global_Date = 0;  //Дата, выбранная в календаре
 const monthNames = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
@@ -42,7 +52,6 @@ exports.getIndex = async function(request, response){
 
         const select2 = await TimeSheet.query()
             .where('currentDay', curDate);
-
             for (let i = 0; i<select2.length; i++) {
                 for (let j=0; j<data.length; j++) {
                     if(select2[i]['employeeId'] == data[j]['id']) {
@@ -157,21 +166,6 @@ function getCorrectTime(time){
 exports.postSave = async function(request, response) {
     if(!request.body)
         return response.sendStatus(400);
-    let timeOfArrival = request.body.timeOfArrival;
-    let numberOfHours = "";
-    
-    let timeToLeave = "18:00";   //Конец рабочего дня по умолчанию
-    let time_to_leave = getCorrectTime(timeToLeave); //Время ухода сотрудников
-    let time_of_arrival = getCorrectTime(timeOfArrival);  //Время прихода сотрудников
-    let number_of_hours = new Date(time_to_leave.getTime() - time_of_arrival.getTime());  //Разница между временем прихода и ухода
-
-    numberOfHours = `${number_of_hours.getUTCHours() - 1}:${number_of_hours.getUTCMinutes()}`; //Количество отработанных часов
-    timeOfArrival = `${time_of_arrival.getUTCHours()}:${time_of_arrival.getUTCMinutes()}`;
-
-    console.log(timeOfArrival);
-    console.log(numberOfHours);
-
-    const employeeId = request.params.employeeId;
 
     if(global_Date)
         var date = new Date(global_Date);
@@ -181,15 +175,44 @@ exports.postSave = async function(request, response) {
     let d = date.getDate();
     let curDate = `${y}-${m}-${d}`;   //Выбранная в календаре дата
 
-    console.log("\n\tbegin");
-    console.log(curDate);
-    console.log(request.body);
+    console.log(request.body);    
+    try {
+        //Валидируем данные и сохраняем в объекты
+        const validateEmployeeId = schema.validate({validate_int: +request.body.employeeId});
+        const validateTimeOfArrival = schema.validate({validate_time: request.body.timeOfArrival});
+        console.log(validateEmployeeId);
+        console.log(validateTimeOfArrival);
+
+        var employeeId = validateEmployeeId.value.validate_int;
+        var timeOfArrival = validateTimeOfArrival.value.validate_time;
+
+        //Получаем количество отработанных часов
+        let timeToLeave = "18:00";   //Конец рабочего дня по умолчанию
+        let time_to_leave = getCorrectTime(timeToLeave); //Время ухода сотрудников
+        let time_of_arrival = getCorrectTime(timeOfArrival);  //Время прихода сотрудников
+        let number_of_hours = new Date(time_to_leave.getTime() - time_of_arrival.getTime());  //Разница между временем прихода и ухода
+        var numberOfHours = `${number_of_hours.getUTCHours() - 1}:${number_of_hours.getUTCMinutes()}`; //Количество отработанных часов
+
+        console.log(employeeId);
+        console.log(timeOfArrival);
+        console.log(numberOfHours); 
+    } catch(err) {
+        console.log("error");
+        console.log(err);
+
+        response.locals.message = err.message;
+        response.locals.error = request.app.get('env') === 'development' ? err : {};
+
+        // render the error page
+        response.status(err.status || 500);
+        return response.render('error');
+    }
 
     try {
         const select = await TimeSheet.query()
             .select('id', 'employeeId')
             .where('currentDay', curDate)
-            .where('employeeId', employeeId);
+            .where('employeeId', "" + employeeId);
 
             console.log("\n\tselect:");
             console.log(select);
@@ -210,7 +233,7 @@ exports.postSave = async function(request, response) {
                 });
                 console.log("update: ");
                 console.log(update);
-            return response.redirect(301, "/index");
+            return response.redirect("/index");
         } 
         else {
             const insert = await TimeSheet.query()
@@ -223,7 +246,7 @@ exports.postSave = async function(request, response) {
                 console.log("insert: ");
                 console.log(insert);
 
-            return response.redirect(301, "/index");
+            return response.redirect("/index");
         } 
 
     } catch(err) {
@@ -236,13 +259,10 @@ exports.postSave = async function(request, response) {
     }
 };
 
-////////////////////////////////////////////
 //Обработка формы отпросился
 exports.postGetAway = async function(request, response){
     if(!request.body)
         return response.sendStatus(400);
-    const causeText = request.body.getAwayComment;
-    const employeeId = request.params.employeeId;
 
     if(global_Date)
         var date = new Date(global_Date);
@@ -252,11 +272,17 @@ exports.postGetAway = async function(request, response){
     let d = date.getDate();
     let curDate = `${y}-${m}-${d}`;
 
-    console.log("\nbegin Отпросился: ");
-    console.log(curDate);
-    console.log(request.body);
-
     try {
+        console.log("\nbegin Отпросился: ");
+        console.log(request.body);
+
+        //Валидируем данные и сохраняем в объекты
+        const validateEmployeeId = schema.validate({validate_int: request.body.id});
+        const validateCauseText = schema.validate({validate_string: request.body.getAwayComment});
+
+        const employeeId = validateEmployeeId.value.validate_int;
+        const causeText = validateCauseText.value.validate_string;
+
         const select = await TimeSheet.query()
             .where('currentDay', curDate)
             .where('employeeId', employeeId);
@@ -303,15 +329,11 @@ exports.postGetAway = async function(request, response){
     }
 };
 
+
 //Обработка формы встречи
 exports.postMeeting = async function(request, response){
     if(!request.body)
         return response.sendStatus(400);
-    console.log(request.body);
-    const timeFrom = request.body.meeting_timeFrom;
-    const timeTo = request.body.meeting_timeTo;
-    const causeText = request.body.meetingComment;
-    const employeeId = request.params.employeeId;
 
     if(global_Date)
         var date = new Date(global_Date);
@@ -322,6 +344,18 @@ exports.postMeeting = async function(request, response){
     let curDate = `${y}-${m}-${d}`;
 
     try {
+        //Валидируем данные и сохраняем в объекты
+        const validateEmployeeId = schema.validate({validate_int: request.body.id});
+        const validateTimeFrom = schema.validate({validate_time: request.body.meeting_timeFrom});
+        const validateTimeTo = schema.validate({validate_time: request.body.meeting_timeTo});
+        const validateCauseText = schema.validate({validate_string: request.body.meetingComment});
+
+        console.log(request.body);
+        const employeeId = validateEmployeeId.value.validate_int;
+        const timeFrom = validateTimeFrom.value.validate_time;
+        const timeTo = validateTimeTo.value.validate_time;
+        const causeText = validateCauseText.value.validate_string;
+
         const select = await TimeSheet.query()
             .select('id', 'employeeId')
             .where('currentDay', curDate)

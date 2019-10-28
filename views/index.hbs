@@ -57,6 +57,7 @@
                 <th class="td" style="text-align: center">{{this.order}}</th>
                 <td class="td" name="employee">{{this.employee}}</td>
                 <form id="timeSheetForm_{{this.id}}" name="timeSheetForm_{{this.id}}">
+                    <input type="hidden" name="id" value="{{this.id}}">
                     <td class="td" style="padding: 0px 1% 0px 3%">
                         <input class="timeSheetInput" id="timeOfArrival_{{this.id}}" type="tel" name="timeOfArrival" value="{{this.timeOfArrival}}">
                     </td>
@@ -82,15 +83,17 @@
                     saveButton.addEventListener("click", async function(){
 
                         var formData = new FormData(timeSheetForm_{{this.id}});
+                        var employeeId = formData.get("id");
                         var timeOfArrival = formData.get("timeOfArrival");
                         var numberOfHours = formData.get("numberOfHours");
 
-                        var response = await fetch('/save/{{this.id}}', {
+                        var response = await fetch('/save', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
+                                employeeId: employeeId,
                                 timeOfArrival: timeOfArrival,
                                 numberOfHours: numberOfHours
                             })
@@ -142,7 +145,10 @@
                                 </a>
                                 <a class="overlay" id="getAway_{{this.id}}"></a>
                                 <div class="window">
-                                    <form action="/getAway/{{this.id}}" name="addWorkerForm" method="post">
+                                    <form action="/getAway" name="addWorkerForm" method="post">
+                                        <p>
+                                            <input type="hidden" name="id" value="{{this.id}}">
+                                        </p>
                                         <p>
                                             <label>Причина:</label></br>
                                             <input type="text" class="meetingInput" name="getAwayComment">
@@ -169,7 +175,10 @@
                                 </a>
                                 <a class="overlay" id="meeting_{{this.id}}"></a>
                                 <div class="window">
-                                    <form action="/meeting/{{this.id}}" name="meetingForm" method="post">
+                                    <form action="/meeting" name="meetingForm" method="post">
+                                        <p>
+                                            <input type="hidden" name="id" value="{{this.id}}">
+                                        </p>
                                         <p>
                                             <label>НА ВСТРЕЧЕ С:</label></br>
                                             <input type="tel" class="meetingInput" id="meeting_timeFrom_{{this.id}}" name="meeting_timeFrom">

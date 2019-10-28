@@ -20,8 +20,8 @@
 				<div>
 					<div class="select-arrow"></div> 
 					<select name="role" id="role">
-						<option value="Сотрудник">Сотрудник</option>
-						<option value="Администратор">Администратор</option>
+						<option value=0 selected>Сотрудник</option>
+						<option value=1>Администратор</option>
 					</select>
 				</div>
 				<div>
@@ -37,7 +37,7 @@
 		let username = document.getElementById("username");
 		let password = document.getElementById("password");
 		let role = document.getElementById("role");
-		
+
 		username.addEventListener("click", function() {
 			let mes = document.getElementById('message');
 			mes.className = "hide_message";

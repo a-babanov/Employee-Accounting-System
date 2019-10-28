@@ -1,4 +1,17 @@
+const Joi = require('@hapi/joi');
 const User = require('../models/usersModel.js');
+
+const schema = Joi.object({
+    validate_name: Joi.string()
+        .min(4)
+        .max(20)
+        .pattern(/^[a-zA-Z]{4,20}$/),
+
+    validate_password: Joi.string()
+        .min(4)
+        .max(20)
+        .pattern(/^[a-zA-Z0-9]{4,20}$/)
+});
 
 //Открытие страницы авторизации
 exports.getPageSignIn = function(request, response) {
@@ -22,42 +35,64 @@ exports.postSignIn = async function(request, response) {
 
     console.log("\nАвторизация");
     console.log(request.body);
-    let username = request.body.username;
-    let password = request.body.password;
 
-    const selectUsersLogin = await User  //Ищем пользователя с логином 'username'
-        .query()
-        .where('login', username);
+    try {
+        //Валидируем данные и сохраняем в объекты
+        const validateName = await schema.validateAsync({validate_name: request.body.username});
+        const validatePassword = await schema.validateAsync({validate_password: request.body.password});
+        console.log(validateName);
+        console.log(validatePassword);
 
-    console.log(selectUsersLogin);
-
-    if(!selectUsersLogin[0]) {      
+        var username = validateName.validate_name;
+        var password = validatePassword.validate_password;
+    } catch(err) {
         return response.json({
             field: 1,
-            message: "Неверный логин"
-        });
-    }
-    if(selectUsersLogin[0]['password'] !== password) {
-        return response.json({
-            field: 2,
-            message: "Неверный пароль"
+            message: "Неверный логин и пароль"   //пароль и логин не прошли валидацию
         });
     }
 
-    request.session.userId = selectUsersLogin[0]['id'];
-    request.session.userLogin = selectUsersLogin[0]['login'];
-    request.session.userRole = selectUsersLogin[0]['role'];
-    console.log(request.session);
+    try {
+        const selectUsersLogin = await User  //Ищем пользователя с логином 'username'
+            .query()
+            .where('login', username);
+
+        console.log(selectUsersLogin);
+
+        if(!selectUsersLogin[0]) {      
+            return response.json({
+                field: 1,
+                message: "Неверный логин"
+            });
+        }
+        if(selectUsersLogin[0]['password'] !== password) {
+            return response.json({
+                field: 2,
+                message: "Неверный пароль"
+            });
+        }
+
+        request.session.userId = selectUsersLogin[0]['id'];
+        request.session.userLogin = selectUsersLogin[0]['login'];
+        request.session.userRole = selectUsersLogin[0]['role'];
+        console.log(request.session);
                     
-    if(request.session.userRole !== 0) { 
+        if(request.session.userRole !== 0) { 
+            return response.json({
+                field: 2,
+                message: "Нет разрешённого доступа!"
+            });
+        }
+
         return response.json({
-            field: 2,
-            message: "Нет разрешённого доступа!"
+            field: 0,
+            message: ""
+        });
+    } catch(err) {
+        console.log(err);
+        return response.json({
+            field: 1,
+            message: "Произошла ошибка при запросе"
         });
     }
-
-    return response.json({
-        field: 0,
-        message: ""
-    });
 };

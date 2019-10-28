@@ -1,4 +1,18 @@
+const Joi = require('@hapi/joi');
+
 const User = require('../models/usersModel.js');
+
+const schema = Joi.object({
+    validate_name: Joi.string()
+        .min(4)
+        .max(20)
+        .pattern(/^[a-zA-Z]{4,20}$/),
+
+    validate_password: Joi.string()
+        .min(4)
+        .max(20)
+        .pattern(/^[a-zA-Z0-9]{4,20}$/)
+});
 
 function isEmpty(object){  //функция, которая проверяет пуст ли масссив объектов
     for(i in object){
@@ -23,23 +37,49 @@ exports.postLogin = async function(request, response) {
     }
 
     console.log("\nрегистрация: ");
+    console.log(request.body);
 
-    let username = request.body.username;
-    let password = request.body.password;
+    try {
+        //Валидируем данные логина и сохраняем в объект
+        const validateName = await schema.validateAsync({validate_name: request.body.username});
+        console.log(validateName);
+        
+        var username = validateName.validate_name;
+    } catch(err) {
+        console.log(err);
+        if(err['details'][0]['type'] == "string.pattern.base") {
+            return response.json({
+                field: 1,
+                message: "Введите латинские символы"
+            });
+        }
 
-    if(username.length < 5) {
         return response.json({
             field: 1,
-            message: "Введите количество символов больше 4 и меньше 16"
+            message: "Введите количество символов больше 4 и меньше 20"
         });
-    } 
-    
-    if(password.length < 5 || password.length > 16) {
+    }
+
+    try {
+        //Валидируем данные пароли и сохраняем в объект
+        const validatePassword = await schema.validateAsync({validate_password: request.body.password});
+        console.log(validatePassword);
+
+        var password = validatePassword.validate_password;
+    } catch(err) {
+        console.log(err);
+        if(err['details'][0]['type'] == "string.pattern.base") {
+            return response.json({
+                field: 2,
+                message: "Введите латинские символы и цифры"
+            });
+        }
+
         return response.json({
             field: 2,
-            message: "Введите длину пароля больше 4 символов и меньше 16"
+            message: "Введите количество символов больше 4 и меньше 20"
         });
-    }   
+    }
 
     try {
         const selectUsersLogin = await User
