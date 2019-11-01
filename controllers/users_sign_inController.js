@@ -2,12 +2,12 @@ const Joi = require('@hapi/joi');
 const User = require('../models/usersModel.js');
 
 const schema = Joi.object({
-    validate_name: Joi.string()
+    username: Joi.string()
         .min(4)
         .max(20)
         .pattern(/^[a-zA-Z]{4,20}$/),
 
-    validate_password: Joi.string()
+    password: Joi.string()
         .min(4)
         .max(20)
         .pattern(/^[a-zA-Z0-9]{4,20}$/)
@@ -38,13 +38,14 @@ exports.postSignIn = async function(request, response) {
 
     try {
         //Валидируем данные и сохраняем в объекты
-        const validateName = await schema.validateAsync({validate_name: request.body.username});
-        const validatePassword = await schema.validateAsync({validate_password: request.body.password});
-        console.log(validateName);
-        console.log(validatePassword);
+        const body = await schema.validateAsync({
+            username: request.body.username,
+            password: request.body.password
+        });
+        console.log(body);
 
-        var username = validateName.validate_name;
-        var password = validatePassword.validate_password;
+        var username = body.username;
+        var password = body.password;
     } catch(err) {
         return response.json({
             field: 1,

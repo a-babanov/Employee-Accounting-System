@@ -7,11 +7,17 @@ const Meeting = require('../models/meetingModel.js');
 const TimeSheet = require('../models/timesheetModel.js');
 
 const schema = Joi.object({
-    validate_int: Joi.number(),
+    id: Joi.number(),
 
-    validate_string: Joi.string(),
+    timeOfArrival: Joi.string()
+        .pattern(/^(\d\d?):(\d\d?)$/),
 
-    validate_time: Joi.string()
+    causeText: Joi.string(),
+
+    timeFrom: Joi.string()
+        .pattern(/^(\d\d?):(\d\d?)$/),
+
+    timeTo: Joi.string()
         .pattern(/^(\d\d?):(\d\d?)$/)
 });
 
@@ -174,17 +180,19 @@ exports.postSave = async function(request, response) {
     let m = date.getMonth() + 1;
     let d = date.getDate();
     let curDate = `${y}-${m}-${d}`;   //Выбранная в календаре дата
-
-    console.log(request.body);    
+  
     try {
         //Валидируем данные и сохраняем в объекты
-        const validateEmployeeId = schema.validate({validate_int: +request.body.employeeId});
-        const validateTimeOfArrival = schema.validate({validate_time: request.body.timeOfArrival});
-        console.log(validateEmployeeId);
-        console.log(validateTimeOfArrival);
+        const body = await schema.validateAsync({
+            id: +request.body.employeeId,
+            timeOfArrival: request.body.timeOfArrival
+        });
+        // console.log(request.body);  
+        // console.log("\n\tbody: ");
+        // console.log(body);
 
-        var employeeId = validateEmployeeId.value.validate_int;
-        var timeOfArrival = validateTimeOfArrival.value.validate_time;
+        var employeeId = body.id;
+        var timeOfArrival = body.timeOfArrival;
 
         //Получаем количество отработанных часов
         let timeToLeave = "18:00";   //Конец рабочего дня по умолчанию
@@ -193,9 +201,9 @@ exports.postSave = async function(request, response) {
         let number_of_hours = new Date(time_to_leave.getTime() - time_of_arrival.getTime());  //Разница между временем прихода и ухода
         var numberOfHours = `${number_of_hours.getUTCHours() - 1}:${number_of_hours.getUTCMinutes()}`; //Количество отработанных часов
 
-        console.log(employeeId);
-        console.log(timeOfArrival);
-        console.log(numberOfHours); 
+        // console.log(employeeId);
+        // console.log(timeOfArrival);
+        // console.log(numberOfHours); 
     } catch(err) {
         console.log("error");
         console.log(err);
@@ -273,15 +281,19 @@ exports.postGetAway = async function(request, response){
     let curDate = `${y}-${m}-${d}`;
 
     try {
-        console.log("\nbegin Отпросился: ");
-        console.log(request.body);
-
         //Валидируем данные и сохраняем в объекты
-        const validateEmployeeId = schema.validate({validate_int: request.body.id});
-        const validateCauseText = schema.validate({validate_string: request.body.getAwayComment});
+        const body = await schema.validateAsync({
+            id: request.body.id,
+            causeText: request.body.getAwayComment
+        });
 
-        const employeeId = validateEmployeeId.value.validate_int;
-        const causeText = validateCauseText.value.validate_string;
+        console.log("\n\tОтпросился: ");
+        console.log(request.body);
+        console.log("\n\tbody: ");
+        console.log(body);
+
+        const employeeId = body.id;
+        const causeText = body.causeText;
 
         const select = await TimeSheet.query()
             .where('currentDay', curDate)
@@ -345,16 +357,20 @@ exports.postMeeting = async function(request, response){
 
     try {
         //Валидируем данные и сохраняем в объекты
-        const validateEmployeeId = schema.validate({validate_int: request.body.id});
-        const validateTimeFrom = schema.validate({validate_time: request.body.meeting_timeFrom});
-        const validateTimeTo = schema.validate({validate_time: request.body.meeting_timeTo});
-        const validateCauseText = schema.validate({validate_string: request.body.meetingComment});
+        const body = await schema.validateAsync({
+            id: request.body.id,
+            timeFrom: request.body.meeting_timeFrom,
+            timeTo: request.body.meeting_timeTo,
+            causeText: request.body.meetingComment
+        });
 
         console.log(request.body);
-        const employeeId = validateEmployeeId.value.validate_int;
-        const timeFrom = validateTimeFrom.value.validate_time;
-        const timeTo = validateTimeTo.value.validate_time;
-        const causeText = validateCauseText.value.validate_string;
+        console.log("\n\tbody: ");
+        console.log(body);
+        const employeeId = body.id;
+        const timeFrom = body.timeFrom;
+        const timeTo = body.timeTo;
+        const causeText = body.causeText;
 
         const select = await TimeSheet.query()
             .select('id', 'employeeId')

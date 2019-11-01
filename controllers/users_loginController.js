@@ -3,12 +3,12 @@ const Joi = require('@hapi/joi');
 const User = require('../models/usersModel.js');
 
 const schema = Joi.object({
-    validate_name: Joi.string()
+    username: Joi.string()
         .min(4)
         .max(20)
         .pattern(/^[a-zA-Z]{4,20}$/),
 
-    validate_password: Joi.string()
+    password: Joi.string()
         .min(4)
         .max(20)
         .pattern(/^[a-zA-Z0-9]{4,20}$/)
@@ -41,10 +41,12 @@ exports.postLogin = async function(request, response) {
 
     try {
         //Валидируем данные логина и сохраняем в объект
-        const validateName = await schema.validateAsync({validate_name: request.body.username});
+        const validateName = await schema.validateAsync({
+            username: request.body.username
+        });
         console.log(validateName);
         
-        var username = validateName.validate_name;
+        var username = validateName.username;
     } catch(err) {
         console.log(err);
         if(err['details'][0]['type'] == "string.pattern.base") {
@@ -62,10 +64,10 @@ exports.postLogin = async function(request, response) {
 
     try {
         //Валидируем данные пароли и сохраняем в объект
-        const validatePassword = await schema.validateAsync({validate_password: request.body.password});
+        const validatePassword = await schema.validateAsync({password: request.body.password});
         console.log(validatePassword);
 
-        var password = validatePassword.validate_password;
+        var password = validatePassword.password;
     } catch(err) {
         console.log(err);
         if(err['details'][0]['type'] == "string.pattern.base") {

@@ -5,11 +5,23 @@ const Employee = require('../models/employeesModel.js');
 const Holidays = require('../models/holidaysModel.js');
 
 const schema = Joi.object({
-    validate_id: Joi.number(),
+    id: Joi.number(),
+    name: Joi.string(),
+    birthday: Joi.string()
+        .pattern(/^(\d\d?)\-(\d\d?)\-(\d{4})$/),
 
-    validate_name: Joi.string(),
+    appointmentDay: Joi.string()
+        .pattern(/^(\d\d?)\-(\d\d?)\-(\d{4})$/),
 
-    validate_date: Joi.string()
+    terminationDay: Joi.string()
+        .pattern(/^(\d\d?)\-(\d\d?)\-(\d{4})$/),
+
+
+    causeText: Joi.string(),
+    dateFrom: Joi.string()
+        .pattern(/^(\d\d?)\-(\d\d?)\-(\d{4})$/),
+
+    dateTo: Joi.string()
         .pattern(/^(\d\d?)\-(\d\d?)\-(\d{4})$/)
 });
 
@@ -73,15 +85,18 @@ exports.postAddEmployee = async function(request, response){
         return response.sendStatus(400);
 
     try {
-    //Валидируем данные и сохраняем в объекты
-    const validateName = await schema.validateAsync({validate_name: request.body.employeeName});
-    const validateBirthDay = await schema.validateAsync({validate_date: request.body.employeeBirthDay});
-    const validateAppointmentDay = await schema.validateAsync({validate_date: request.body.employeeAppoinmentDay});
+        //Валидируем данные и сохраняем в объект
+        const body = await schema.validateAsync({
+            name: request.body.employeeName,
+            birthday: request.body.employeeBirthDay,
+            appointmentDay: request.body.employeeAppoinmentDay
+        });
 
-    const name = validateName.validate_name;
-    const birthDay = correct_date(validateBirthDay.validate_date);
-    const appointmentDay = correct_date(validateAppointmentDay.validate_date);
-
+        console.log(request.body);
+        console.log(body);
+        const name = body.name;
+        const birthDay = correct_date(body.birthday);
+        const appointmentDay = correct_date(body.appointmentDay);
 
         await Employee
             .query()
@@ -105,21 +120,29 @@ exports.postEdit = async function(request, response){
         return response.sendStatus(400);
 
     try {
-        //Валидируем данные и сохраняем в объекты
-        const validateId = await schema.validateAsync({ validate_id: request.body.id });
-        const validateName = await schema.validateAsync({ validate_name: request.body.employeeName });
-        const validateBirthDay = await schema.validateAsync({ validate_date: request.body.employeeBirthDay });
-        const validateAppointmentDay = await schema.validateAsync({ validate_date: request.body.employeeAppoinmentDay });    
+        //Валидируем данные и сохраняем в объект
+        const body = await schema.validateAsync({
+            id: request.body.id,
+            name: request.body.employeeName,
+            birthday: request.body.employeeBirthDay,
+            appointmentDay: request.body.employeeAppoinmentDay,
+        });
+        
+        console.log(request.body);
+        console.log("\tbody: ");
+        console.log(body);
 
-        const id = validateId.validate_id;
-        const name = validateName.validate_name;
-        const birthDay = correct_date(validateBirthDay.validate_date);
-        const appointmentDay = correct_date(validateAppointmentDay.validate_date);
+        const id = body.id;
+        const name = body.name;
+        const birthDay = correct_date(body.birthday);
+        const appointmentDay = correct_date(body.appointmentDay);
 
         if(request.body.employeeTerminationDay) {
-            const validateTerminationDay = await schema.validateAsync({ validate_date: request.body.employeeTerminationDay });
-            const terminationDay = correct_date(validateTerminationDay.validate_date);
-            console.log(terminationDay);
+            const body2 = await schema.validateAsync({
+                terminationDay: request.body.employeeTerminationDay
+            });
+            console.log(body2);
+            const terminationDay = correct_date(body2.terminationDay);
 
             const update = await Employee.query()
                 .findById(id)
@@ -162,18 +185,22 @@ exports.postHoliday = async function(request, response){
         return response.sendStatus(400);
     
     try {
+        //Валидируем данные и сохраняем в объект
+        const body = await schema.validateAsync({
+            id: request.body.id,
+            dateFrom: request.body.dateOfHoliday,
+            dateTo: request.body.dateOfEndHoliday,
+            causeText: request.body.causeText
+        });
+
         console.log(request.body);
+        console.log("\tbody: ");
+        console.log(body);
 
-        //Валидируем данные и сохраняем в объекты
-        const validateId = await schema.validateAsync({validate_id: request.body.id});
-        const validateDateOfHoliday = await schema.validateAsync({ validate_date: request.body.dateOfHoliday });
-        const validateDateOfEndHoliday = await schema.validateAsync({ validate_date: request.body.dateOfEndHoliday });
-        const validateCauseText = await schema.validateAsync({ validate_name: request.body.causeText });    
-
-        const id = validateId.validate_id;
-        const dateOfHoliday = correct_date(validateDateOfHoliday.validate_date);
-        const dateOfEndHoliday = correct_date(validateDateOfEndHoliday.validate_date);
-        const causeText = validateCauseText.validate_name;
+        const id = body.id;
+        const dateOfHoliday = correct_date(body.dateFrom);
+        const dateOfEndHoliday = correct_date(body.dateTo);
+        const causeText = body.causeText;
         const kindOfHolidayId = 1;
 
         await Holidays.query()
@@ -202,16 +229,22 @@ exports.postBusinessTrip = async function(request, response){
         return response.sendStatus(400);
 
     try {
-        //Валидируем данные и сохраняем в объекты
-        const validateId = await schema.validateAsync({validate_id: request.body.id});
-        const validateDateFrom = await schema.validateAsync({ validate_date: request.body.dateFrom });
-        const validateDateTo = await schema.validateAsync({ validate_date: request.body.dateTo });
-        const validateCauseText = await schema.validateAsync({ validate_name: request.body.causeText });    
+        //Валидируем данные и сохраняем в объект
+        const body = await schema.validateAsync({
+            id: request.body.id,
+            dateFrom: request.body.dateFrom,
+            dateTo: request.body.dateTo,
+            causeText: request.body.causeText
+        });
+        
+        console.log(request.body);
+        console.log("\tbody: ");
+        console.log(body);
 
-        const id = validateId.validate_id;
-        const dateFrom = correct_date(validateDateFrom.validate_date);
-        const dateTo = correct_date(validateDateTo.validate_date);
-        const causeText = validateCauseText.validate_name;
+        const id = body.id;
+        const dateFrom = correct_date(body.dateFrom);
+        const dateTo = correct_date(body.dateTo);
+        const causeText = body.causeText;
         const kindOfHolidayId = 2;
 
         await Holidays.query()
@@ -240,16 +273,22 @@ exports.postSickDays = async function(request, response){
         return response.sendStatus(400);
     
     try {
-        //Валидируем данные и сохраняем в объекты
-        const validateId = await schema.validateAsync({validate_id: request.body.id});
-        const validateDateFrom = await schema.validateAsync({ validate_date: request.body.dateFrom });
-        const validateDateTo = await schema.validateAsync({ validate_date: request.body.dateTo });
-        const validateCauseText = await schema.validateAsync({ validate_name: request.body.causeText });    
+        //Валидируем данные и сохраняем в объект
+        const body = await schema.validateAsync({
+            id: request.body.id,
+            dateFrom: request.body.dateFrom,
+            dateTo: request.body.dateTo,
+            causeText: request.body.causeText
+        });
 
-        const id = validateId.validate_id;
-        const dateFrom = correct_date(validateDateFrom.validate_date);
-        const dateTo = correct_date(validateDateTo.validate_date);
-        const causeText = validateCauseText.validate_name;
+        console.log(request.body);
+        console.log("\tbody: ");
+        console.log(body);
+
+        const id = body.id;
+        const dateFrom = correct_date(body.dateFrom);
+        const dateTo = correct_date(body.dateTo);
+        const causeText = body.causeText;
         const kindOfHolidayId = 3;
 
         const insert = await Holidays.query()
